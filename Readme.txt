@@ -67,8 +67,11 @@ docker pull instadeepct/mava:jax-core-latest
 
 docker run --gpus all -it --rm  -v $(pwd):${MAVA_DIR} -w ${MAVA_DIR} instadeepct/mava:jax-core-latest python examples/debugging/simple_spread/feedforward/decentralised/run_ippo.py --base_dir ${MAVA_DIR}/logs/
 
+docker run --gpus all -it --rm  -v $(pwd):${MAVA_DIR} -w ${MAVA_DIR} instadeepct/mava:jax-core-latest python examples/flatland/feedforward/decentralised/run_ippo.py --base_dir ${MAVA_DIR}/logs/
+
 python3 -m examples.petting_zoo.simple_spread.feedforward.decentralised.run_ippo
 python3 -m examples.petting_zoo.butterfly.run_ippo_with_monitoring
+python3 -m examples.flatland.feedforward.decentralised.run_ippo
 ------------------------------
 
 To run from python3 (example)

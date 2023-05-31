@@ -1,6 +1,10 @@
 ##########################################################
 # Core Mava image
 FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 as mava-core
+# FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu20.04 as mava-core
+# Prevent situation where we get stuck
+ENV TZ=Asia/Kuala_Lumpur \
+    DEBIAN_FRONTEND=noninteractive
 # Flag to record agents
 ARG record
 # Ensure no installs try launch interactive screen
@@ -33,7 +37,9 @@ COPY . /home/app/mava
 # For box2d
 RUN apt-get install swig -y
 ## Install core dependencies + reverb.
+# Mod by Tim:
 RUN pip install -e .[reverb]
+# RUN pip install -e .[dm-reverb==0.7.2]
 ## Optional install for screen recording.
 ENV DISPLAY=:0
 RUN if [ "$record" = "true" ]; then \
@@ -67,17 +73,6 @@ RUN apt-get install ffmpeg libsm6 libxext6  -y
 RUN apt-get install -y unrar-free
 RUN pip install autorom
 RUN AutoROM -v
-##########################################################
-
-##########################################################
-# SMAC image
-FROM jax-core AS sc2
-## Install smac environment
-RUN apt-get -y install git
-RUN pip install .[sc2]
-# We use the pz wrapper for smac
-RUN pip install .[pz]
-ENV SC2PATH /home/app/mava/3rdparty/StarCraftII
 ##########################################################
 
 ##########################################################

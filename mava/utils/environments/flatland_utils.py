@@ -45,7 +45,13 @@ def check_flatland_import() -> bool:
 
 
 _found_flatland = check_flatland_import()
-if _found_flatland:
+
+if (_found_flatland == False):
+    # Mod by Tim:
+    print("----         WARNING!!            ----")
+    print("Not Installed: _found_flatland:", _found_flatland)
+    print("---- PLEASE INSTALL FLATLAND FIRST ----")
+else:
     from flatland.envs.line_generators import sparse_line_generator
     from flatland.envs.malfunction_generators import (
         MalfunctionParameters,

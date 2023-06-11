@@ -12,6 +12,7 @@ box2d-py
 gym<=0.23.0
 importlib-metadata<5.0
 typing-extensions
+cloudpickle==2.2.1
 
 # Tensorflow Requirements
 tensorflow==2.8.4
@@ -22,8 +23,8 @@ dm-launchpad
 dm-acme==0.4.0
 trfl
 chex
-dm-reverb==0.7.2
-tf-agents[reverb]==0.12.1
+dm-reverb==0.7.3
+tf-agents[reverb]==0.12.0
 
 # Jax Requirements
 jax==0.3.24

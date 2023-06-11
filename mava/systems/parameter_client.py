@@ -37,7 +37,9 @@ class ParameterClient:
         get_keys: Optional[List[str]] = None,
         set_keys: Optional[List[str]] = None,
         update_period: int = 1,
-        devices: Dict[str, Optional[Union[str, jax.xla.Device]]] = {},
+        # Mod by Tim: Change from Jax 0.3.24 to 0.4.12; jax.xla.Device with jax.Device.
+        devices: Dict[str, Optional[Union[str, jax.Device]]] = {},
+        # devices: Dict[str, Optional[str]] = {},
     ):
         """Initialise the parameter client.
 

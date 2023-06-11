@@ -14,6 +14,17 @@
 # limitations under the License.
 """Example running feedforward MADQN on Flatland."""
 
+##-----------------------------------------
+# Mod by Tim:
+import tensorflow as tf
+import os
+from tensorflow.python.client import device_lib
+os.environ['CUDA_VISIBLE_DEVICES'] = "0"
+print(f"Using GPU is CUDA:{os.environ['CUDA_VISIBLE_DEVICES']}")
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+print(device_lib.list_local_devices())
+##-----------------------------------------
+
 import functools
 from datetime import datetime
 from typing import Any, Dict
@@ -107,7 +118,9 @@ def main(_: Any) -> None:
         critic_optimiser=critic_optimiser,
         run_evaluator=True,
         epoch_batch_size=5,
-        num_epochs=15,
+        # Mod by Tim:
+        # num_epochs=15,
+        num_epochs=1,
         num_executors=1,
         multi_process=True,
     )

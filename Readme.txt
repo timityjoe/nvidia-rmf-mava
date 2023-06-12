@@ -54,6 +54,9 @@ nvcc --version
 
 ###################################
    Mava
+   - Don't use Docker Desktop
+   - Use Mava tag 0.1.3,    docker build --target tf-core -t mava/tf:2.8.4-py38-ubuntu20.04 .
+   - If development branch, docker build --target jax-core -t mava/tf:2.12.0-py39-ubuntu20.04 .
 ###################################
 Install from source via
 https://github.com/instadeepai/Mava/blob/develop/examples/quickstart.ipynb
@@ -65,13 +68,14 @@ ldd [OPTION] ...
 
 Commands:
 ------------------------------
-docker build . -t mava:tf-core
-docker build . -t mava:jax-core
-docker pull instadeepct/mava:jax-core-latest
+# docker build . -t mava:tf-core
+# docker build . -t mava:jax-core
+# docker pull instadeepct/mava:jax-core-latest
+docker build . --target tf-core -t mava/tf:2.8.4-py38-ubuntu20.04
 
-sudo docker run --gpus all -it --rm  -v $(pwd):${MAVA_DIR} -w ${MAVA_DIR} instadeepct/mava:jax-core-latest python examples/debugging/simple_spread/feedforward/decentralised/run_ippo.py --base_dir ${MAVA_DIR}/logs/
+sudo docker run --gpus all -it --rm  -v $(pwd):/home/app/mava -w /home/app/mava instadeepct/mava:jax-core-latest python examples/debugging/simple_spread/feedforward/decentralised/run_ippo.py --base_dir /home/app/mava/logs/
 
-sudo docker run --gpus all -it --rm  -v $(pwd):${MAVA_DIR} -w ${MAVA_DIR} /var/lib/docker/mava:jax-core python examples/flatland/feedforward/decentralised/run_ippo.py --base_dir ${MAVA_DIR}/logs/
+sudo docker run --gpus all -it --rm  -v $(pwd):/home/app/mava -w /home/app/mava /var/lib/docker/mava:jax-core python examples/flatland/feedforward/decentralised/run_ippo.py --base_dir /home/app/mava/logs/
 
 # Setup
 docker context use default
@@ -82,10 +86,12 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/x86_64-linux-gnu/:/usr/local/cu
 
 # Cuda Image Test
 docker context use default
-docker run -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
-docker run --gpus all -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
-docker run --rm --privileged --gpus all -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
-sudo docker run --rm --gpus all --privileged -v /dev:/dev nvidia/cuda:11.2.0-base-ubuntu20.04 nvidia-smi
+# docker run -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
+# docker run --gpus all -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
+# docker run --rm --gpus all -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
+docker run -it --rm --gpus all nvidia/cuda:11.2.0-cudnn8-runtime-ubuntu20.04
+* Check that nvidia-smi, have Nvidia-Driver & CUDA
+             nvcc -V, has nvidia cuda toolkit 
 
 # Tensorflow Test
 https://github.com/usr-ein/test-tensorflow
@@ -97,10 +103,25 @@ docker run -it --rm tensorflow/tensorflow bash
 docker run -it --rm -v $(realpath ~/notebooks):/tf/notebooks -p 8888:8888 tensorflow/tensorflow:latest-jupyter
 
 
-# Tensorflow Python Test (Terminal)
-# https://www.tensorflow.org/install/pip
-python3 -c "import tensorflow as tf; print(tf.reduce_sum(tf.random.normal([1000, 1000])))"
-python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+# Conda Commands
+# Setup
+# https://utho.com/docs/tutorial/how-to-install-anaconda-on-ubuntu-20-04-lts/
+wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
+bash Anaconda3-2023.03-1-Linux-x86_64.sh
+	* Specify conda directory, ie:
+	${DATA}/anaconda3
+	*Do you wish the installer to initialize Anaconda3 by running conda init? [Set 'no'] 
+	*Change via "conda config --set auto_activate_base false"
+	* Add this to ~/.bashrc:
+	export PATH=$DATA/anaconda3/bin:$PATH
+	# If encountering "Your shell has not been properly configured to use 'conda activate'.", then "conda dactivate" from (base)
+	source activate base	
+conda init bash
+conda create --name conda39-mava python=3.9
+conda activate conda39-mava
+conda deactivate
+conda clean --all	# Purge cache and unused apps
+condo info
 
 
 # Tensorflow with Cuda GPU install (Conda)
@@ -109,21 +130,46 @@ python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'
 # https://www.tensorflow.org/install/pip
 conda install cuda -c nvidia
 conda install -c nvidia cudnn
-# conda install -c anaconda cudatoolkit=11.8.0
-conda activate nvidia-rmf-mava
-conda deactivate
-conda clean --all
+	* Set these env variables after CUDNN is installed
+	CUDNN_PATH=$(dirname $(python -c "import nvidia.cudnn;print(nvidia.cudnn.__file__)"))
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/:$CUDNN_PATH/lib
+
+
+# Tensorflow Python Test (Terminal)
+# https://www.tensorflow.org/install/pip
+python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+python3 -c "import tensorflow as tf; print(tf.reduce_sum(tf.random.normal([1000, 1000])))"
+
+
+# Docker commands
+# Copy files out Container - Desktop
+* Clear out ~/.docker
+rm -rf ./
+docker context ls
+docker image ls
+sudo chmod 666 /var/run/docker.sock
+docker cp bf77b897f29d:/home/app/mava/'/home/app/mava'/mava ~/mava_docker/mava
 
 
 # Mava-Jax
-docker build . -t mava:jax-core
+(in conda virtual env) pip install -r requirements.txt
+# docker build . -t mava:jax-core
+# docker pull instadeepct/mava:jax-core-latest
+docker build . --target tf-core -t mava/tf:2.8.4-py38-ubuntu20.04
+
 docker context use default
-docker pull instadeepct/mava:jax-core-latest
-sudo docker run --gpus all -it instadeepct/mava:jax-core-latest bash
-sudo docker run --gpus all -it docker.io/library/mava:jax-core bash
+# sudo docker run --gpus all -it instadeepct/mava:jax-core-latest bash
+# sudo docker run --gpus all -it docker.io/library/mava:jax-core bash
+sudo docker run --gpus all -it docker.io/mava/tf:2.8.4-py38-ubuntu20.04 bash
 sudo docker run --rm --runtime=nvidia --gpus all -it docker.io/library/mava:jax-core bash
 
 
+# Mava Tag 0.1.3
+python3 -m examples.tf.debugging.simple_spread.recurrent.decentralised.run_madqn
+python3 -m examples.tf.flatland.recurrent.decentralised.run_madqn
+
+
+# Mava Development Branch
 python3 -m examples.petting_zoo.simple_spread.feedforward.decentralised.run_ippo
 python3 -m examples.petting_zoo.butterfly.run_ippo_with_monitoring
 python3 -m examples.flatland.feedforward.decentralised.run_ippo

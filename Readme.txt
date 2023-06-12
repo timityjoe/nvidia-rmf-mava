@@ -68,6 +68,12 @@ ldd [OPTION] ...
 
 Commands:
 ------------------------------
+# Docker Install
+sudo apt install containerd
+sudo apt install docker.io
+sudo snap install docker
+docker images
+
 # docker build . -t mava:tf-core
 # docker build . -t mava:jax-core
 # docker pull instadeepct/mava:jax-core-latest
@@ -78,9 +84,12 @@ sudo docker run --gpus all -it --rm  -v $(pwd):/home/app/mava -w /home/app/mava 
 sudo docker run --gpus all -it --rm  -v $(pwd):/home/app/mava -w /home/app/mava /var/lib/docker/mava:jax-core python examples/flatland/feedforward/decentralised/run_ippo.py --base_dir /home/app/mava/logs/
 
 # Setup
+# https://phoenixnap.com/kb/install-docker-on-ubuntu-20-04
+# https://docs.docker.com/desktop/install/ubuntu/
 docker context use default
 whereis libnvidia-ml.so.1
 sudo apt install nvidia-cuda-toolkit
+sudo apt install nvidia-docker2
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.8/compat
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/lib64
 
@@ -88,7 +97,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/x86_64-linux-gnu/:/usr/local/cu
 docker context use default
 # docker run -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
 # docker run --gpus all -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
-# docker run --rm --gpus all -it nvidia/cuda:11.2.0-base-ubuntu20.04 bash
+# docker run --rm --gpus all -it --rm  nvidia/cuda:11.2.0-base-ubuntu20.04 bash
 docker run -it --rm --gpus all nvidia/cuda:11.2.0-cudnn8-runtime-ubuntu20.04
 * Check that nvidia-smi, have Nvidia-Driver & CUDA
              nvcc -V, has nvidia cuda toolkit 
@@ -156,12 +165,14 @@ docker cp bf77b897f29d:/home/app/mava/'/home/app/mava'/mava ~/mava_docker/mava
 # docker build . -t mava:jax-core
 # docker pull instadeepct/mava:jax-core-latest
 docker build . --target tf-core -t mava/tf:2.8.4-py38-ubuntu20.04
+docker build . --target jax-core -t mava/develop-ubuntu20.04
 
 docker context use default
 # sudo docker run --gpus all -it instadeepct/mava:jax-core-latest bash
 # sudo docker run --gpus all -it docker.io/library/mava:jax-core bash
-sudo docker run --gpus all -it docker.io/mava/tf:2.8.4-py38-ubuntu20.04 bash
-sudo docker run --rm --runtime=nvidia --gpus all -it docker.io/library/mava:jax-core bash
+sudo docker run --gpus all -it --rm docker.io/mava/tf:2.8.4-py38-ubuntu20.04 bash
+sudo docker run --gpus all -it --rm mava/develop-ubuntu20.04
+sudo docker run --gpus all -it --rm docker.io/library/mava:jax-core bash
 
 
 # Mava Tag 0.1.3
@@ -170,6 +181,7 @@ python3 -m examples.tf.flatland.recurrent.decentralised.run_madqn
 
 
 # Mava Development Branch
+python3 -m examples.debugging.simple_spread.recurrent.decentralised.run_ippo
 python3 -m examples.petting_zoo.simple_spread.feedforward.decentralised.run_ippo
 python3 -m examples.petting_zoo.butterfly.run_ippo_with_monitoring
 python3 -m examples.flatland.feedforward.decentralised.run_ippo

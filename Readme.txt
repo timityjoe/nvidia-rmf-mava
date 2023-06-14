@@ -55,8 +55,14 @@ nvcc --version
 ###################################
    Mava
    - Don't use Docker Desktop
+   - Install 
+   	- nvidia-driver-XX
+   	- cuda 11.8
+   	- nvidia-cuda-toolkit
+   	- nvidia-docker2
    - Use Mava tag 0.1.3,    docker build --target tf-core -t mava/tf:2.8.4-py38-ubuntu20.04 .
    - If development branch, docker build --target jax-core -t mava/tf:2.12.0-py39-ubuntu20.04 .
+   - pip install -r requirements.txt -t ./pipenv
 ###################################
 Install from source via
 https://github.com/instadeepai/Mava/blob/develop/examples/quickstart.ipynb
@@ -70,7 +76,7 @@ Commands:
 ------------------------------
 # Docker Install
 sudo apt install containerd
-sudo apt install docker.io
+sudo apt install docker.ce
 sudo snap install docker
 docker images
 
@@ -125,9 +131,11 @@ bash Anaconda3-2023.03-1-Linux-x86_64.sh
 	export PATH=$DATA/anaconda3/bin:$PATH
 	# If encountering "Your shell has not been properly configured to use 'conda activate'.", then "conda dactivate" from (base)
 	source activate base	
+	conda deactivate
 conda init bash
 conda create --name conda39-mava python=3.9
 conda activate conda39-mava
+pip install -r requirements.txt -t ./pipenv
 conda deactivate
 conda clean --all	# Purge cache and unused apps
 condo info
@@ -158,6 +166,11 @@ docker context ls
 docker image ls
 sudo chmod 666 /var/run/docker.sock
 docker cp bf77b897f29d:/home/app/mava/'/home/app/mava'/mava ~/mava_docker/mava
+
+sudo docker images
+sudo docker ps
+sudo docker image rm -f mava/develop-ubuntu20.04
+sudo docker rmi -f fd484f19954f
 
 
 # Mava-Jax

@@ -194,10 +194,19 @@ python3 -m examples.tf.flatland.recurrent.decentralised.run_madqn
 
 
 # Mava Development Branch
+python3 -m tests.systems.systems_test_data
+python3 -m tests.systems.ippo_system_test
 python3 -m examples.debugging.simple_spread.recurrent.decentralised.run_ippo
 python3 -m examples.petting_zoo.simple_spread.feedforward.decentralised.run_ippo
 python3 -m examples.petting_zoo.butterfly.run_ippo_with_monitoring
 python3 -m examples.flatland.feedforward.decentralised.run_ippo
+
+# Start Tensorboard
+tensorboard --logdir='/home/timityjoe/mava/2023-06-14 16:37:22.034724' --port=8080
+tensorboard --logdir='/home/timityjoe/mava/2023-06-16 10:46:12.066764' --port=8080
+
+python3 -c "tensorboard --logdir='/home/timityjoe/mava_docker/mava/2023-05-31 12:10:40.073251' --port=8080"
+tensorboard --logdir /home/timityjoe/mava_docker/mava/2023-05-31 12:10:40.073251
 ------------------------------
 
 To run from python3 (example)

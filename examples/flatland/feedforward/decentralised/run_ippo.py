@@ -23,6 +23,10 @@ os.environ['CUDA_VISIBLE_DEVICES'] = "0"
 print(f"Using GPU is CUDA:{os.environ['CUDA_VISIBLE_DEVICES']}")
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 print(device_lib.list_local_devices())
+
+# See bar chart progress
+# from tqdm import tqdm
+from loguru import logger
 ##-----------------------------------------
 
 import functools
@@ -90,7 +94,9 @@ def main(_: Any) -> None:
     logger_factory = functools.partial(
         logger_utils.make_logger,
         directory=FLAGS.base_dir,
-        to_terminal=True,
+        # Mod by Tim: Turn off
+        # to_terminal=True,
+        to_terminal=False,
         to_tensorboard=True,
         time_stamp=FLAGS.mava_id,
         time_delta=log_every,
@@ -109,6 +115,22 @@ def main(_: Any) -> None:
     system = ippo.IPPOSystem()
 
     # Build the system.
+    # system.build(
+    #     environment_factory=environment_factory,
+    #     network_factory=network_factory,
+    #     logger_factory=logger_factory,
+    #     experiment_path=experiment_path,
+    #     policy_optimiser=policy_optimiser,
+    #     critic_optimiser=critic_optimiser,
+    #     run_evaluator=True,
+    #     epoch_batch_size=5,
+    #     num_epochs=15,
+    #     num_executors=1,
+    #     multi_process=True,
+    # )
+
+    # Mod by Tim: Build the system.
+    # See /examples/debugging/simple_spread/recurrent/decentralised/run_ippo.py
     system.build(
         environment_factory=environment_factory,
         network_factory=network_factory,
@@ -118,14 +140,13 @@ def main(_: Any) -> None:
         critic_optimiser=critic_optimiser,
         run_evaluator=True,
         epoch_batch_size=5,
-        # Mod by Tim:
-        # num_epochs=15,
         num_epochs=1,
         num_executors=1,
         multi_process=True,
-    )
+    )    
 
     # Launch the system.
+    logger.info("Flatland example Start Time:")
     system.launch()
 
 

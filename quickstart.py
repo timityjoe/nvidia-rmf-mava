@@ -655,11 +655,13 @@ if __name__ == "__main__":
     ep_returns=[]
 
     # Compiling the learner and evaluator
+    print("Compiling the learner and evaluator...")
     with TimeIt(tag="COMPILATION", environment_steps=timesteps_per_training):
         # Compile the learner function to optimize performance during training.
         learn(learner_state)
 
     # Compile the evaluator function
+    print("Compile the evaluator function...")
     _ = evaluator(trained_params, eval_rngs)
 
     start_time=time.time()
@@ -672,12 +674,14 @@ if __name__ == "__main__":
 
     for i in tqdm(range(config["num_evaluation"])):
         # Train.
+        print("1) Train")
         with TimeIt("EXECUTION",environment_steps=timesteps_per_training,):
             learner_output = learn(learner_state)
             jax.block_until_ready(learner_output)
 
 
         # Prepare for evaluation.
+        print("2) Prepare for eval")
         trained_params = jax.tree_util.tree_map(
                 lambda x: x[:, 0, ...],
                 learner_output.learner_state.params.actor_params,  # Select only actor params
@@ -687,14 +691,17 @@ if __name__ == "__main__":
         eval_rngs = eval_rngs.reshape(n_devices, -1)
 
         # Evaluate.
+        print("3) Evaluate")
         evaluator_output = evaluator(trained_params, eval_rngs)
         jax.block_until_ready(evaluator_output)
         ep_returns=plot_performance(evaluator_output, ep_returns, start_time)
 
         # Update runner state to continue training.
+        print("4) Update learner_state")
         learner_state = learner_output.learner_state
 
     # Return trained params to be used for rendering or testing.
+    print("Return trained params to be used for rendering or testing...")
     trained_params= jax.tree_util.tree_map(
         lambda x: x[0, 0, ...], learner_output.learner_state.params.actor_params
     )

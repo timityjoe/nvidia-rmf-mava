@@ -200,6 +200,7 @@ python3 -m examples.debugging.simple_spread.recurrent.decentralised.run_ippo
 python3 -m examples.petting_zoo.simple_spread.feedforward.decentralised.run_ippo
 python3 -m examples.petting_zoo.butterfly.run_ippo_with_monitoring
 python3 -m examples.flatland.feedforward.decentralised.run_ippo
+python3 -m quickstart
 
 # Start Tensorboard
 tensorboard --logdir='/home/timityjoe/mava/2023-06-14 16:37:22.034724' --port=8080

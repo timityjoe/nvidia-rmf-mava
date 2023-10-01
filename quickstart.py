@@ -79,6 +79,9 @@ from mava.types import ExperimentOutput, LearnerState, OptStates, Params, PPOTra
 from mava.evaluator import evaluator_setup
 
 # Plot requirements
+import matplotlib
+# matplotlib.use("TkAgg")
+# matplotlib.interactive(True)
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 import time
@@ -92,6 +95,15 @@ sns.color_palette("colorblind")
 import time
 from loguru import logger
 from tqdm import tqdm
+
+# Setup logger
+# from jumanji.training.setup_train import (
+#     setup_agent,
+#     setup_env,
+#     setup_evaluators,
+#     setup_logger,
+#     setup_training_state,
+# )
 
 
 class Actor(nn.Module):
@@ -437,6 +449,7 @@ def learner_setup(
     """Initialise learner_fn, network, optimiser, environment and states."""
     # Get available TPU cores.
     n_devices = len(jax.devices())
+    logger.info(f"n_devices:{n_devices}")
 
     # Get number of actions and agents.
     num_actions = int(env.action_spec().num_values[0])
@@ -580,6 +593,7 @@ def render_one_episode(config, params, max_steps=100) -> None:
     env.animate(states=states, interval=100, save_path="./rware.gif")
 
 def plot_performance(metrics, ep_returns, start_time):
+    #   plt.ion()
       plt.figure(figsize=(8, 4))
       clear_output(wait=True)
 
@@ -609,6 +623,8 @@ if __name__ == "__main__":
             print("A TPU is connected.")
         else:
             print("Only CPU accelerator is connected.")
+
+    logger.info({"devices": jax.local_devices()})
 
     env = jumanji.make(config["env_name"])
     env = RwareMultiAgentWithGlobalStateWrapper(env)
@@ -668,6 +684,7 @@ if __name__ == "__main__":
 
     # Start date and time
     now = datetime.now() 
+    start = time.time()
     date_time_start = now.strftime("%m/%d/%Y, %H:%M:%S")
     print("Start date and time:",date_time_start)
 
@@ -700,6 +717,9 @@ if __name__ == "__main__":
         print("4) Update learner_state")
         learner_state = learner_output.learner_state
 
+    # Write learner state to file
+
+
     # Return trained params to be used for rendering or testing.
     print("Return trained params to be used for rendering or testing...")
     trained_params= jax.tree_util.tree_map(
@@ -711,15 +731,16 @@ if __name__ == "__main__":
     date_time_end = now.strftime("%m/%d/%Y, %H:%M:%S")
     print("End date and time:",date_time_end)    
     
-    elapsed_time = date_time_end - date_time_start
-    print("Elapsed time seconds",elapsed_time.total_seconds()) 
+    end = time.time()
+    elapsed_time = end - start
+    print("Elapsed time seconds", elapsed_time) 
 
     render_one_episode(config, trained_params)
         
 
-    import IPython
-    from IPython.display import Image
-    Image(filename='/content/rware.gif',embed=True)
+    # import IPython
+    # from IPython.display import Image
+    # Image(filename='/content/rware.gif',embed=True)
     logger.info("Main() End")
      
 

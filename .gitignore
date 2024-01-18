@@ -107,7 +107,6 @@ celerybeat.pid
 # Environments
 .env
 .venv
-env/
 venv/
 ENV/
 env.bak/
@@ -143,10 +142,15 @@ mava/share
 mava/include
 mava/workspace.code-workspace
 
+# learner_state checkpoints
+checkpoints
+
+# vaults
+vaults
+
 # misc
 NULL
 logs
-Checkpoints
 .DS_Store
 .devcontainer/devcontainer.json
 3.9

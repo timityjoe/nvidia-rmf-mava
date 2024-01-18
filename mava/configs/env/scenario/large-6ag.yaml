@@ -1,0 +1,17 @@
+# The config of the large-6ag environment
+# Only odd numbers supported for "column_height"
+#            The final grid size will be
+#            height: (column_height + 1) * shelf_rows + 2
+#            width: (2 + 1) * shelf_columns + 1
+
+#            The bottom-middle column will be removed to allow for
+#            robot queuing next to the goal locations
+task_name: large-6ag
+
+task_config:
+  column_height: 9
+  shelf_rows: 8
+  shelf_columns: 9
+  num_agents: 6
+  sensor_range: 1
+  request_queue_size: 4

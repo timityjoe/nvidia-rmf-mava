@@ -30,7 +30,8 @@ pip install -r requirements/requirements-dev.txt
 #
 python3 -m mava.systems.ff_ippo env=rware
 python3 -m mava.systems.ff_ippo_2 env=rware2 env/scenario=tiny-4ag
-
+python3 -m mava.systems.ff_ippo_2 env=rware2 env/scenario=small-4ag
+python3 -m mava.systems.ff_ippo_2 env=rware2 env/scenario=large-6ag
 
 
 # Start Tensorboard

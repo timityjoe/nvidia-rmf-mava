@@ -563,7 +563,7 @@ def run_experiment(_config: Dict) -> None:
         * config["arch"]["num_envs"]
     )
     pprint(config)
-    loguru_logger.info("    config:{config}")
+    loguru_logger.info(f"    config:{config}")
 
     # Set up checkpointer
     loguru_logger.info("8) Set up checkpointer")

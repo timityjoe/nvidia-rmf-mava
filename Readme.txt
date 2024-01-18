@@ -38,4 +38,8 @@ python3 -m mava.systems.ff_ippo_2 env=rware2 env/scenario=large-6ag
 cd ./results
 tensorboard --logdir=./ --port=8080
 
+# Some results:
+large-6ag  num_envs:16  num_evaluation:1000  timetaken=2hrs20mins (no convergence)
+
+
 

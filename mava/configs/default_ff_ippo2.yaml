@@ -1,0 +1,5 @@
+defaults:
+  - logger: ff_ippo2
+  - arch: anakin2
+  - system: ff_ippo2
+  - env: rware2

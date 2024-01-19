@@ -84,18 +84,6 @@ RNNObservation: TypeAlias = Tuple[Observation, Done]
 RNNGlobalObservation: TypeAlias = Tuple[ObservationGlobalState, Done]
 
 
-class PPOTransition(NamedTuple):
-    """Transition tuple for PPO."""
-
-    done: Done
-    action: Action
-    value: Value
-    reward: chex.Array
-    log_prob: chex.Array
-    obs: chex.Array
-    info: Dict
-
-
 class Params(NamedTuple):
     """Parameters of an actor critic network."""
 
@@ -139,14 +127,39 @@ class RNNLearnerState(NamedTuple):
     hstates: HiddenStates
 
 
+class PPOTransition(NamedTuple):
+    """Transition tuple for PPO."""
+
+    done: Done
+    action: Action
+    value: Value
+    reward: chex.Array
+    log_prob: chex.Array
+    obs: chex.Array
+    info: Dict
+
+
+class RNNPPOTransition(NamedTuple):
+    """Transition tuple for PPO."""
+
+    done: Done
+    action: Action
+    value: Value
+    reward: chex.Array
+    log_prob: chex.Array
+    obs: chex.Array
+    hstates: HiddenStates
+    info: Dict
+
+
 class EvalState(NamedTuple):
     """State of the evaluator."""
 
     key: chex.PRNGKey
     env_state: State
     timestep: TimeStep
-    step_count_: chex.Numeric
-    return_: chex.Numeric
+    step_count: chex.Array
+    episode_return: chex.Array
 
 
 class RNNEvalState(NamedTuple):
@@ -157,8 +170,8 @@ class RNNEvalState(NamedTuple):
     timestep: TimeStep
     dones: chex.Array
     hstate: HiddenState
-    step_count_: chex.Numeric
-    return_: chex.Numeric
+    step_count: chex.Array
+    episode_return: chex.Array
 
 
 MavaState = TypeVar("MavaState", LearnerState, RNNLearnerState, EvalState, RNNEvalState)

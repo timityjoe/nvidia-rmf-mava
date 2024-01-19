@@ -34,6 +34,10 @@ python3 -m mava.systems.ff_ippo_2 env=rware2 env/scenario=small-4ag
 python3 -m mava.systems.ff_ippo_2 env=rware2 env/scenario=large-6ag
 
 
+# Experience Recorder (Offline Data Generation)
+python3 -m mava.advanced_usage.ff_ippo_store_experience env=rware2 env/scenario=small-4ag
+
+
 # Start Tensorboard
 cd ./results
 tensorboard --logdir=./ --port=8080

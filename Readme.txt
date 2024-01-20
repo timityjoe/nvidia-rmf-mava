@@ -47,6 +47,7 @@ tensorboard --logdir=./ --port=8080
 
 # Some results:
 large-6ag  num_envs:16  num_evaluation:1000  timetaken=2hrs20mins (no convergence)
+large-6ag  num_envs:160  num_evaluation:1000  timetaken=12hrs00mins (no convergence)
 
 
 

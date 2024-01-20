@@ -12,27 +12,76 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Tuple, TypeVar
 
 import chex
+from distrax import Distribution
 from flax.core.frozen_dict import FrozenDict
-from jumanji.environments.routing.robot_warehouse import State
 from jumanji.types import TimeStep
 from optax._src.base import OptState
+from typing_extensions import NamedTuple, TypeAlias
 
-from mava.wrappers.jumanji import LogEnvState
+if TYPE_CHECKING:  # https://github.com/python/mypy/issues/6239
+    from dataclasses import dataclass
+else:
+    from flax.struct import dataclass
 
 
-class PPOTransition(NamedTuple):
-    """Transition tuple for PPO."""
+Action: TypeAlias = chex.Array
+Value: TypeAlias = chex.Array
+Done: TypeAlias = chex.Array
+HiddenState: TypeAlias = chex.Array
+# Can't know the exact type of State.
+State: TypeAlias = Any
 
-    done: chex.Array
-    action: chex.Array
-    value: chex.Array
-    reward: chex.Array
-    log_prob: chex.Array
-    obs: chex.Array
-    info: Dict
+
+class Observation(NamedTuple):
+    """The observation that the agent sees.
+    agents_view: the agent's view of the environment.
+    action_mask: boolean array specifying, for each agent, which action is legal.
+    step_count: the number of steps elapsed since the beginning of the episode.
+    """
+
+    agents_view: chex.Array  # (num_agents, num_obs_features)
+    action_mask: chex.Array  # (num_agents, num_actions)
+    step_count: chex.Array  # (num_agents, )
+
+
+class ObservationGlobalState(NamedTuple):
+    """The observation seen by agents in centralised systems.
+    Extends `Observation` by adding a `global_state` attribute for centralised training.
+    global_state: The global state of the environment, often a concatenation of agents' views.
+    """
+
+    agents_view: chex.Array  # (num_agents, num_obs_features)
+    action_mask: chex.Array  # (num_agents, num_actions)
+    global_state: chex.Array  # (num_agents, num_agents * num_obs_features)
+    step_count: chex.Array  # (num_agents, )
+
+
+@dataclass
+class LogEnvState:
+    """State of the `LogWrapper`."""
+
+    env_state: State
+    episode_returns: chex.Numeric
+    episode_lengths: chex.Numeric
+    # Information about the episode return and length for logging purposes.
+    episode_return_info: chex.Numeric
+    episode_length_info: chex.Numeric
+
+
+@dataclass
+class JaxMarlState:
+    """Wrapper around a JaxMarl state to provide necessary attributes for jumanji environments."""
+
+    state: State
+    key: chex.PRNGKey
+    step: int
+
+
+RNNObservation: TypeAlias = Tuple[Observation, Done]
+RNNGlobalObservation: TypeAlias = Tuple[ObservationGlobalState, Done]
 
 
 class Params(NamedTuple):
@@ -52,8 +101,8 @@ class OptStates(NamedTuple):
 class HiddenStates(NamedTuple):
     """Hidden states for an actor critic learner."""
 
-    policy_hidden_state: chex.Array
-    critic_hidden_state: chex.Array
+    policy_hidden_state: HiddenState
+    critic_hidden_state: HiddenState
 
 
 class LearnerState(NamedTuple):
@@ -74,8 +123,33 @@ class RNNLearnerState(NamedTuple):
     key: chex.PRNGKey
     env_state: LogEnvState
     timestep: TimeStep
-    dones: chex.Array
+    dones: Done
     hstates: HiddenStates
+
+
+class PPOTransition(NamedTuple):
+    """Transition tuple for PPO."""
+
+    done: Done
+    action: Action
+    value: Value
+    reward: chex.Array
+    log_prob: chex.Array
+    obs: chex.Array
+    info: Dict
+
+
+class RNNPPOTransition(NamedTuple):
+    """Transition tuple for PPO."""
+
+    done: Done
+    action: Action
+    value: Value
+    reward: chex.Array
+    log_prob: chex.Array
+    obs: chex.Array
+    hstates: HiddenStates
+    info: Dict
 
 
 class EvalState(NamedTuple):
@@ -84,8 +158,8 @@ class EvalState(NamedTuple):
     key: chex.PRNGKey
     env_state: State
     timestep: TimeStep
-    step_count_: chex.Numeric = None
-    return_: chex.Numeric = None
+    step_count: chex.Array
+    episode_return: chex.Array
 
 
 class RNNEvalState(NamedTuple):
@@ -95,17 +169,28 @@ class RNNEvalState(NamedTuple):
     env_state: State
     timestep: TimeStep
     dones: chex.Array
-    hstate: chex.Array
-    step_count_: chex.Numeric = None
-    return_: chex.Numeric = None
+    hstate: HiddenState
+    step_count: chex.Array
+    episode_return: chex.Array
 
 
-class ExperimentOutput(NamedTuple):
+MavaState = TypeVar("MavaState", LearnerState, RNNLearnerState, EvalState, RNNEvalState)
+
+
+class ExperimentOutput(NamedTuple, Generic[MavaState]):
     """Experiment output."""
 
-    episodes_info: Dict[str, chex.Array]
-    learner_state: Optional[LearnerState] = None
-    total_loss: chex.Array = None
-    value_loss: chex.Array = None
-    loss_actor: chex.Array = None
-    entropy: chex.Array = None
+    learner_state: MavaState
+    episode_metrics: Dict[str, chex.Array]
+    train_metrics: Dict[str, chex.Array]
+
+
+LearnerFn = Callable[[MavaState], ExperimentOutput[MavaState]]
+EvalFn = Callable[[FrozenDict, chex.PRNGKey], ExperimentOutput[MavaState]]
+
+ActorApply = Callable[[FrozenDict, Observation], Distribution]
+CriticApply = Callable[[FrozenDict, Observation], Value]
+RecActorApply = Callable[
+    [FrozenDict, HiddenState, RNNObservation], Tuple[HiddenState, Distribution]
+]
+RecCriticApply = Callable[[FrozenDict, HiddenState, RNNObservation], Tuple[HiddenState, Value]]

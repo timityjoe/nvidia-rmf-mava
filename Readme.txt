@@ -12,6 +12,10 @@ conda create --name conda39-mava python=3.9
 conda activate conda39-mava
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/
 
+## Pull additional repos
+vcs import < og_marl_repo.txt
+pip install https://github.com/instadeepai/Mava/archive/refs/tags/0.1.2.zip
+
 
 # Pip setup (from pyproject.toml and setup.py)
 pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113^C
@@ -39,6 +43,10 @@ python3 -m mava.systems.ff_ippo_2 env=rware2 env/scenario=large-6ag
 python3 -m mava.advanced_usage.ff_ippo_store_experience_2 env=rware env/scenario=small-4ag
 python3 -m mava.advanced_usage.ff_ippo_store_experience_2 env=rware2 env/scenario=small-4ag
 python3 -m mava.advanced_usage.ff_ippo_store_experience_2 env=rware2 env/scenario=large-6ag
+
+
+# Experience Playback (Offline Pretraining)
+python3 -m mava.advanced_usage.train_offline_algo
 
 
 # Start Tensorboard

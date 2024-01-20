@@ -52,7 +52,7 @@ from mava.utils.make_env import make
 
 # Mod by Tim:
 import time
-import tqdm
+from tqdm import tqdm
 from loguru import logger as loguru_logger
 # loguru_logger.remove()
 # loguru_logger.add(sys.stdout, level="INFO")
@@ -598,9 +598,9 @@ def run_experiment(_config: Dict) -> None:
     
     log_interval = 100
 
-    for i in range(config["arch"]["num_evaluation"]):
-    # pbar = tqdm(range(num_eval))
-    # for i in pbar:
+    # for i in range(config["arch"]["num_evaluation"]):
+    pbar = tqdm(range(config["arch"]["num_evaluation"]))
+    for i in pbar:
         # Train.
         start_time = time.time()
         start = time.perf_counter()
@@ -655,9 +655,9 @@ def run_experiment(_config: Dict) -> None:
         # Update runner state to continue training.
         learner_state = learner_output.learner_state
 
-        # if log_interval and i % log_interval == 0:
-        #     elapsed = time.perf_counter() - start
-        #     pbar.set_description(f"Step: {i}")
+        if log_interval and i % log_interval == 0:
+            elapsed = time.perf_counter() - start
+            pbar.set_description(f"Step: {i}")
 
 
     # Measure absolute metric.

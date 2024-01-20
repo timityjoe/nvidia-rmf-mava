@@ -1,16 +1,5 @@
-# Copyright 2022 InstaDeep Ltd. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# See 
+# https://github.com/instadeepai/Mava/compare/develop...fix/use-new-vault-api
 
 import copy
 import time
@@ -47,6 +36,15 @@ from mava.utils.checkpointing import Checkpointer
 from mava.utils.jax import merge_leading_dims, unreplicate_learner_state
 from mava.utils.logger import LogEvent, MavaLogger
 from mava.utils.make_env import make
+
+# Mod by Tim:
+import time
+import tqdm
+from loguru import logger as loguru_logger
+# loguru_logger.remove()
+# loguru_logger.add(sys.stdout, level="INFO")
+# loguru_logger.add(sys.stdout, level="SUCCESS")
+# loguru_logger.add(sys.stdout, level="WARNING")
 
 StoreExpLearnerFn = Callable[[MavaState], Tuple[ExperimentOutput[MavaState], PPOTransition]]
 
@@ -353,6 +351,7 @@ def get_learner_fn(
 def learner_setup(
     env: Environment, keys: chex.Array, config: DictConfig
 ) -> Tuple[StoreExpLearnerFn[LearnerState], Actor, LearnerState]:
+    loguru_logger.info("learner_setup")
     """Initialise learner_fn, network, optimiser, environment and states."""
     # Get available TPU cores.
     n_devices = len(jax.devices())
@@ -468,10 +467,12 @@ def learner_setup(
 def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
     """Runs experiment."""
     # Logger setup
+    loguru_logger.info("1) Logger setup")
     config = copy.deepcopy(_config)
     logger = MavaLogger(config)
 
     # Create the enviroments for train and eval.
+    loguru_logger.info("2) Create the enviroments for train and eval.")
     env, eval_env = make(config=config)
 
     # PRNG keys.
@@ -490,6 +491,7 @@ def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
     )
 
     # Calculate total timesteps.
+    loguru_logger.info("6) Calculate total timesteps.")
     n_devices = len(jax.devices())
 
     config.system.num_updates_per_eval = config.system.num_updates // config.arch.num_evaluation
@@ -500,7 +502,10 @@ def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
         * config.system.update_batch_size
         * config.arch.num_envs
     )
+    loguru_logger.info(f"   steps_per_rollout:{steps_per_rollout}")
+
     # Get total_timesteps
+    loguru_logger.info("7) Get total_timesteps")
     config.system.total_timesteps = (
         n_devices
         * config.system.num_updates
@@ -511,8 +516,10 @@ def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
     cfg: Dict = OmegaConf.to_container(config, resolve=True)
     cfg["arch"]["devices"] = jax.devices()
     pprint(cfg)
+    loguru_logger.info(f"    cfg:{cfg}")
 
     # Set up checkpointer
+    loguru_logger.info("8) Set up checkpointer")
     save_checkpoint = config.logger.checkpointing.save_model
     if save_checkpoint:
         checkpointer = Checkpointer(
@@ -553,6 +560,8 @@ def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
             * config.arch.num_envs
         ),
     )
+
+    loguru_logger.info("8c) Set up Vault init")   
     buffer_state = buffer.init(
         dummy_flashbax_transition,
     )
@@ -578,6 +587,7 @@ def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
         return experience
 
     # Use vault to record experience
+    loguru_logger.info("8d) Use vault to record experience")  
     if SAVE_VAULT:
         vault = Vault(
             vault_name=VAULT_NAME,
@@ -588,6 +598,7 @@ def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
         )
 
     # Run experiment for a total number of evaluations.
+    loguru_logger.info("9) Run experiment for a total number of evaluations.")
     max_episode_return = jnp.float32(0.0)
     best_params = None
     for eval_step in range(config.arch.num_evaluation):
@@ -668,6 +679,7 @@ def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
     vault.write(buffer_state)
 
     # Measure absolute metric.
+    loguru_logger.info("10) Measure absolute metric.")
     if config.arch.absolute_metric:
         start_time = time.time()
 
@@ -692,12 +704,16 @@ def run_experiment(_config: DictConfig) -> None:  # noqa: CCR001
 def hydra_entry_point(cfg: DictConfig) -> None:
     """Experiment entry point."""
     # Allow dynamic attributes.
+    loguru_logger.info("A) Allow dynamic attributes.")
     OmegaConf.set_struct(cfg, False)
 
     # Run experiment.
+    loguru_logger.info("B) Run experiment.")
     run_experiment(cfg)
 
-    print(f"{Fore.CYAN}{Style.BRIGHT}IPPO experiment completed{Style.RESET_ALL}")
+    # print(f"{Fore.CYAN}{Style.BRIGHT}IPPO experiment completed{Style.RESET_ALL}")
+    loguru_logger.info("C) Done!!")
+    loguru_logger.info(f"{Fore.CYAN}{Style.BRIGHT}IPPO experiment completed{Style.RESET_ALL}")
 
 
 if __name__ == "__main__":

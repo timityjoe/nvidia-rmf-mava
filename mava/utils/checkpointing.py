@@ -15,21 +15,20 @@
 import os
 import warnings
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Type
 
 import absl.logging as absl_logging
 import orbax.checkpoint
 from chex import Numeric
-from flax.core.frozen_dict import FrozenDict
-from jax.tree_util import tree_map
+from jax import tree
 from omegaconf import DictConfig, OmegaConf
 
-from mava.types import HiddenStates, LearnerState, Params, RNNLearnerState
+from mava.types import MavaState
 
 # Keep track of the version of the checkpointer
 # Any breaking API changes should be reflected in the major version (e.g. v0.1 -> v1.0)
 # whereas minor versions (e.g. v0.1 -> v0.2) indicate backwards compatibility
-CHECKPOINTER_VERSION = 1.0
+CHECKPOINTER_VERSION = 2.0
 
 
 class Checkpointer:
@@ -48,6 +47,7 @@ class Checkpointer:
         """Initialise the checkpointer tool
 
         Args:
+        ----
             model_name (str): Name of the model to be saved.
             metadata (Optional[Dict], optional):
                 For storing model metadata. Defaults to None.
@@ -63,8 +63,8 @@ class Checkpointer:
             keep_period (Optional[int], optional):
                 If set, will not delete any checkpoint where
                 checkpoint_step % keep_period == 0. Defaults to None.
-        """
 
+        """
         # When we load an existing checkpoint, the sharding info is read from the checkpoint file,
         # rather than from 'RestoreArgs'. This is desired behaviour, so we suppress the warning.
         warnings.filterwarnings(
@@ -96,7 +96,7 @@ class Checkpointer:
         # Convert metadata to JSON-ready format
         if metadata is not None and isinstance(metadata, DictConfig):
             metadata = OmegaConf.to_container(metadata, resolve=True)
-        metadata_json_ready = tree_map(get_json_ready, metadata)
+        metadata_json_ready = tree.map(get_json_ready, metadata)
 
         self._manager = orbax.checkpoint.CheckpointManager(
             directory=os.path.join(os.getcwd(), rel_dir, model_name, checkpoint_str),
@@ -114,51 +114,58 @@ class Checkpointer:
     def save(
         self,
         timestep: int,
-        unreplicated_learner_state: Union[LearnerState, RNNLearnerState],
+        unreplicated_learner_state: MavaState,
         episode_return: Numeric = 0.0,
     ) -> bool:
         """Save the learner state.
 
         Args:
+        ----
             timestep (int):
                 timestep at which the state is being saved.
-            unreplicated_learner_state (Union[LearnerState, RNNLearnerState]):
+            unreplicated_learner_state (MavaState)
                 a Mava LearnerState (must be unreplicated)
             episode_return (Numeric, optional):
                 Optional value to determine whether this is the 'best' model to save.
                 Defaults to 0.0.
 
         Returns:
+        -------
             bool: whether the saving was successful.
+
         """
         model_save_success: bool = self._manager.save(
             step=timestep,
             items={
                 "learner_state": unreplicated_learner_state,
             },
-            # TODO: Currently we only log the episode return,
-            #       but perhaps we should log other metrics.
-            metrics={"episode_return": episode_return},
+            # TODO: Log other metrics if needed.
+            metrics={"episode_return": float(episode_return)},
         )
         return model_save_success
 
     def restore_params(
         self,
-        input_params: Params,
+        input_params: Any,
         timestep: Optional[int] = None,
         restore_hstates: bool = False,
-    ) -> Tuple[Params, Union[HiddenStates, None]]:
+        THiddenState: Optional[Type] = None,  # noqa: N803
+    ) -> Tuple[Any, Optional[Any]]:
         """Restore the params and the hidden state (in case of RNNs)
 
         Args:
-            input_params (Params): the params of the learner.
-            timestep (Optional[int], optional):
+        ----
+            input_params (Any): A pytree of FrozenDict params of the learner.
+            timestep (Optional[int]):
                 Specific timestep for restoration (of course, only if that timestep exists).
                 Defaults to None, in which case the latest step will be used.
             restore_hstates (bool, optional): Whether to restore the hidden states.
+            THiddenState (Type): The type of the hidden states to be restored.
 
         Returns:
-            Tuple[Params,Union[HiddenStates, None]]: the restored params and hidden states.
+        -------
+            Tuple[Params,Union[HiddenState, None]]: the restored params and hidden states.
+
         """
         # We want to ensure `major` versions match, but allow `minor` versions to differ
         # i.e. v0.1 and 0.2 are compatible, but v1.0 and v2.0 are not
@@ -175,29 +182,25 @@ class Checkpointer:
         # Dictionary of the restored learner state
         restored_learner_state_raw = restored_checkpoint["learner_state"]
 
-        # Check the type of `input_params` for compatibility.
-        # This is a sanity check to ensure correct handling of parameter types.
-        # In Flax 0.6.11, parameters were typically of the `FrozenDict` type,
-        # but in later versions, a regular dictionary is used.
-        if isinstance(input_params.actor_params, FrozenDict):
-            restored_params = Params(**FrozenDict(restored_learner_state_raw["params"]))
-        else:
-            restored_params = Params(**restored_learner_state_raw["params"])
+        # The type of params to restore is the same type as the `input_params`
+        TParams = type(input_params)  # noqa: N806
+
+        # We no longer check if params are in a FrozenDict since we require Flax >= 0.8.1
+        restored_params = TParams(**restored_learner_state_raw["params"])
 
         # Restore hidden states if required
         restored_hstates = None
-        if restore_hstates:
-            if isinstance(input_params.actor_params, FrozenDict):
-                restored_hstates = HiddenStates(**FrozenDict(restored_learner_state_raw["hstates"]))
-            else:
-                restored_hstates = HiddenStates(**restored_learner_state_raw["hstates"])
+        if restore_hstates and THiddenState is not None:
+            restored_hstates = THiddenState(**restored_learner_state_raw["hstates"])
 
         return restored_params, restored_hstates
 
     def get_cfg(self) -> DictConfig:
         """Return the metadata of the checkpoint.
 
-        Returns:
+        Returns
+        -------
             DictConfig: metadata of the checkpoint.
+
         """
         return DictConfig(self._manager.metadata())

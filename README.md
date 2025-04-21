@@ -4,6 +4,12 @@
     </a>
 </p>
 
+<p align="center">
+    <a href="docs/images/2-Figure1-1.png">
+        <img src="docs/images/2-Figure1-1.png" alt="Instadeep_Ecosystem" width="50%"/>
+    </a>
+</p>
+
 <h2 align="center">
     <p>Distributed Multi-Agent Reinforcement Learning in JAX</p>
 </h2>
@@ -80,7 +86,9 @@ python mava/systems/ppo/anakin/ff_ippo.py env=rware
 Different scenarios can also be run by making the following config updates from the terminal:
 
 ```bash
-python mava/systems/ff_ippo.py env=rware env/scenario=tiny-4ag
+python mava/systems/ff_ippo_2.py env=rware env/scenario=tiny-4ag
+python mava/systems/ff_ippo_2.py env=rware env/scenario=small-4ag
+python mava/systems/ff_ippo_2.py env=rware env/scenario=large-6ag
 ```
 
 Additionally, we also have a [Quickstart notebook][quickstart] that can be used to quickly create and train your first multi-agent system.

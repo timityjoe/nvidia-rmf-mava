@@ -525,7 +525,12 @@ def run_experiment(_config: DictConfig) -> float:
 
 @hydra.main(
     config_path="../../../configs/default",
-    config_name="ff_ippo.yaml",
+
+    # Mod by Tim: Turn Tenserboard On
+    # See ${Mava}/mava/configs/default/
+    # config_name="ff_ippo.yaml",
+    config_name="ff_ippo_tensorboard.yaml",
+    
     version_base="1.2",
 )
 def hydra_entry_point(cfg: DictConfig) -> float:

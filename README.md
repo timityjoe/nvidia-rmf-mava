@@ -51,6 +51,7 @@ cd Mava
 uv sync
 # Activate the virtual environment
 source .venv/bin/activate
+uv pip install tensorflow (for Tensorboard display)
 ```
 
 Alternatively with pip, create a virtual environment and then:
@@ -73,6 +74,7 @@ Mava makes use of [Hydra](https://github.com/facebookresearch/hydra) for config 
 
 ```bash
 python mava/systems/ppo/anakin/ff_ippo.py env=lbf
+python mava/systems/ppo/anakin/ff_ippo.py env=rware
 ```
 
 Different scenarios can also be run by making the following config updates from the terminal:
